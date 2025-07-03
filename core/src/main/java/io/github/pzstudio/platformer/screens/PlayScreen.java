@@ -6,16 +6,17 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.math.Rectangle; // Import necessario per Rectangle
+import com.badlogic.gdx.utils.Array; // Import per Array (lista dinamica)
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
-import io.github.pzstudio.platformer.Main; // Assicurati che questo import sia corretto
+import io.github.pzstudio.platformer.Main;
 
 public class PlayScreen implements Screen {
 
-    private Main game; // Riferimento al gioco principale
-    private OrthographicCamera gamecam; // Telecamera per il mondo di gioco
-    private Viewport gamePort; // Viewport per gestire la risoluzione
+    private Main game;
+    private OrthographicCamera gamecam;
+    private Viewport gamePort;
 
     private ShapeRenderer shapeRenderer;
 
@@ -26,6 +27,9 @@ public class PlayScreen implements Screen {
     private float playerVelocityY;
     private float gravity = -500f;
     private boolean onGround;
+
+    // Piattaforme: Un array di rettangoli per rappresentare le piattaforme
+    private Array<Rectangle> platforms;
 
     public PlayScreen(Main game) {
         this.game = game;
@@ -44,11 +48,23 @@ public class PlayScreen implements Screen {
 
         playerVelocityY = 0;
         onGround = true;
+
+        // --- Inizializzazione delle piattaforme ---
+        platforms = new Array<Rectangle>();
+        // Piattaforma iniziale (il "suolo") che copre l'intera larghezza del mondo
+        // La Y è 80 per dare spazio sotto il giocatore e testare la caduta
+        platforms.add(new Rectangle(0, 80, Main.WORLD_WIDTH, 20));
+
+        // Alcune piattaforme aggiuntive per testare il salto e lo scrolling
+        platforms.add(new Rectangle(300, 150, 100, 20)); // Piattaforma a destra della partenza
+        platforms.add(new Rectangle(500, 220, 150, 20)); // Piattaforma più alta
+        platforms.add(new Rectangle(800, 100, 200, 20)); // Piattaforma più lontana
+        platforms.add(new Rectangle(1200, 180, 100, 20)); // Ultima piattaforma
+        // --- Fine inizializzazione piattaforme ---
     }
 
     @Override
     public void show() {
-        // Log iniziale per i valori del mondo e della viewport
         Gdx.app.log("INIT_DEBUG", "Main.V_WIDTH: " + Main.V_WIDTH + ", Main.V_HEIGHT: " + Main.V_HEIGHT);
         Gdx.app.log("INIT_DEBUG", "Main.WORLD_WIDTH: " + Main.WORLD_WIDTH + ", Main.WORLD_HEIGHT: " + Main.WORLD_HEIGHT);
         Gdx.app.log("INIT_DEBUG", "gamePort.getWorldWidth(): " + gamePort.getWorldWidth() + ", gamePort.getWorldHeight(): " + gamePort.getWorldHeight());
@@ -85,17 +101,37 @@ public class PlayScreen implements Screen {
         }
         // --- Fine limiti giocatore ---
 
-        onGround = false;
+        onGround = false; // Presupponiamo che non sia a terra all'inizio del frame
 
+        // Applica la gravità e aggiorna la posizione Y
         playerVelocityY += gravity * dt;
         playerY += playerVelocityY * dt;
 
+        // Aggiorna la posizione del rettangolo di collisione del giocatore
         playerBounds.setPosition(playerX, playerY);
 
-        if (playerY <= 100) {
-            playerY = 100;
+        // --- Gestione delle collisioni con le piattaforme ---
+        for (Rectangle platform : platforms) {
+            if (playerBounds.overlaps(platform)) {
+                // Se il giocatore sta cadendo e collisiona con la parte superiore della piattaforma
+                if (playerVelocityY < 0) {
+                    // Riporta il giocatore sul bordo superiore della piattaforma
+                    playerY = platform.y + platform.height;
+                    playerBounds.y = playerY; // Aggiorna anche il bounds
+                    playerVelocityY = 0; // Ferma la caduta
+                    onGround = true; // Il giocatore è a terra
+                    Gdx.app.log("COLLISION_DEBUG", "Collisione con piattaforma. PlayerY: " + playerY);
+                }
+                // TODO: Aggiungere logica per collisioni laterali o dal basso se necessario
+            }
+        }
+
+        // Se il giocatore cade sotto il mondo (senza collisioni con piattaforme)
+        if (playerY < 0) {
+            playerY = 0;
             playerVelocityY = 0;
             onGround = true;
+            Gdx.app.log("COLLISION_DEBUG", "Caduto sotto il mondo. PlayerY: " + playerY);
         }
 
         // --- Aggiorna la telecamera per seguire il giocatore ---
@@ -109,34 +145,19 @@ public class PlayScreen implements Screen {
         float camHalfWidth = gamePort.getWorldWidth() / 2;
         float camHalfHeight = gamePort.getWorldHeight() / 2;
 
-        // Log di debug per i limiti della telecamera
-        Gdx.app.log("CAMERA_LIMIT_DEBUG",
-            "camHalfWidth: " + camHalfWidth +
-                ", Main.WORLD_WIDTH - camHalfWidth: " + (Main.WORLD_WIDTH - camHalfWidth));
-        Gdx.app.log("CAMERA_LIMIT_DEBUG",
-            "camX before clamp: " + gamecam.position.x);
-
-        // Limite X (sinistro)
         if (gamecam.position.x < camHalfWidth) {
             gamecam.position.x = camHalfWidth;
         }
-        // Limite X (destro)
         if (gamecam.position.x > Main.WORLD_WIDTH - camHalfWidth) {
             gamecam.position.x = Main.WORLD_WIDTH - camHalfWidth;
         }
 
-        // Limite Y (inferiore)
         if (gamecam.position.y < camHalfHeight) {
             gamecam.position.y = camHalfHeight;
         }
-        // Limite Y (superiore)
         if (gamecam.position.y > Main.WORLD_HEIGHT - camHalfHeight) {
             gamecam.position.y = Main.WORLD_HEIGHT - camHalfHeight;
         }
-
-        // Log di debug per la posizione della telecamera dopo il clamping
-        Gdx.app.log("CAMERA_LIMIT_DEBUG",
-            "camX after clamp: " + gamecam.position.x);
 
         gamecam.update();
 
@@ -158,6 +179,14 @@ public class PlayScreen implements Screen {
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         shapeRenderer.setColor(1, 0, 0, 1);
         shapeRenderer.rect(playerX, playerY, playerWidth, playerHeight);
+
+        // --- Disegna le piattaforme ---
+        shapeRenderer.setColor(0, 1, 0, 1); // Colore verde per le piattaforme
+        for (Rectangle platform : platforms) {
+            shapeRenderer.rect(platform.x, platform.y, platform.width, platform.height);
+        }
+        // --- Fine disegno piattaforme ---
+
         shapeRenderer.end();
     }
 
