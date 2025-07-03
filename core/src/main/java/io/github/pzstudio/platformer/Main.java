@@ -6,10 +6,14 @@ import io.github.pzstudio.platformer.screens.PlayScreen;
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
 public class Main extends Game {
 
-    // Possiamo usare un larghezza e altezza virtuale per il gioco,
-    // che poi verrà scalata alla risoluzione dello schermo
+    // Larghezza e altezza virtuale della viewport (quello che vedi sullo schermo)
     public static final int V_WIDTH = 800;
     public static final int V_HEIGHT = 480;
+
+    // Larghezza e altezza del mondo di gioco (il livello intero)
+    // È FONDAMENTALE che WORLD_WIDTH sia MAGGIORE di V_WIDTH per lo scrolling orizzontale
+    public static final int WORLD_WIDTH = 1600; // Esempio: il doppio della larghezza della viewport
+    public static final int WORLD_HEIGHT = 480; // Per ora, stessa altezza della viewport
 
     @Override
     public void create() {
