@@ -1,34 +1,31 @@
 package io.github.pzstudio.platformer;
 
-import com.badlogic.gdx.ApplicationAdapter;
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.utils.ScreenUtils;
+import com.badlogic.gdx.Game;
+import io.github.pzstudio.platformer.screens.PlayScreen;
 
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
-public class Main extends ApplicationAdapter {
-    private SpriteBatch batch;
-    private Texture image;
+public class Main extends Game {
+
+    // Possiamo usare un larghezza e altezza virtuale per il gioco,
+    // che poi verrà scalata alla risoluzione dello schermo
+    public static final int V_WIDTH = 800;
+    public static final int V_HEIGHT = 480;
 
     @Override
     public void create() {
-        batch = new SpriteBatch();
-        image = new Texture("libgdx.png");
+        // Quando il gioco inizia, impostiamo la schermata di gioco
+        setScreen(new PlayScreen(this));
     }
 
     @Override
     public void render() {
-        ScreenUtils.clear(0.15f, 0.15f, 0.2f, 1f);
-        batch.begin();
-        batch.draw(image, 140, 210);
-        batch.end();
+        // Il metodo render del Game chiama il render della Screen attiva
+        super.render();
     }
 
     @Override
     public void dispose() {
-        batch.dispose();
-        image.dispose();
+        // Qui potremmo liberare risorse globali se ne avessimo
+        super.dispose();
     }
 }
