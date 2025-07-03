@@ -1,5 +1,6 @@
 package io.github.pzstudio.platformer.screens;
 
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
@@ -45,7 +46,19 @@ public class PlayScreen implements Screen {
     }
 
     public void handleInput(float dt) {
-        // Gestione degli input (implementeremo dopo)
+        // Velocità di movimento
+        float playerSpeed = 100 * dt; // dt serve a rendere il movimento indipendente dal framerate
+
+        if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
+            playerX -= playerSpeed;
+        }
+        if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
+            playerX += playerSpeed;
+        }
+        // Per ora, un salto semplice senza gravità
+        if (Gdx.input.isKeyPressed(Input.Keys.UP)) {
+            playerY += playerSpeed;
+        }
     }
 
     public void update(float dt) {
